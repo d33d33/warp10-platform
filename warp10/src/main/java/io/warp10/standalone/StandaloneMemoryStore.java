@@ -411,9 +411,11 @@ public class StandaloneMemoryStore extends Thread implements StoreClient {
     
     List<BigInteger> metadatas = null;
 
-    long datapoints = 0L;
     long bytes = 0L;
-    
+    long gctimespan = 0L;
+    long gctimeclip = 0L;
+    long gcwatermark = 0L;
+
     long gcperiod = (long) (0.25 * (timespan / Constants.TIME_UNITS_PER_MS));
     
     if (null != WarpConfig.getProperties().getProperty(STANDALONE_MEMORY_GC_PERIOD)) {
@@ -429,9 +431,11 @@ public class StandaloneMemoryStore extends Thread implements StoreClient {
 
       if (0 == metadatas.size()) { continue; }
 
-      datapoints = 0L;
       bytes = 0L;
-      
+      gctimespan = 0L;
+      gctimeclip = 0L;
+      gcwatermark = 0L;
+
       for (int idx = 0 ; idx < metadatas.size(); idx++) {
 
         //
@@ -488,7 +492,7 @@ public class StandaloneMemoryStore extends Thread implements StoreClient {
                   skipped--;
                 }
                 encoder.reset(decoder.getEncoder(true));
-                datapoints += skipped;
+                gctimespan += skipped;
               }
             } catch (IOException ioe) {
             }
@@ -523,7 +527,7 @@ public class StandaloneMemoryStore extends Thread implements StoreClient {
                   skipped--;
                 }                
                 encoder.reset(decoder.getEncoder(true));
-                datapoints += skipped;
+                gctimeclip += skipped;
               }
             } catch (IOException ioe) {            
             }
@@ -560,7 +564,7 @@ public class StandaloneMemoryStore extends Thread implements StoreClient {
                   skipped--;
                 }
                 encoder.reset(decoder.getEncoder(true));
-                datapoints += skipped;
+                gcwatermark += skipped;
               }
             } catch (IOException ioe) {            
             }
@@ -610,7 +614,10 @@ public class StandaloneMemoryStore extends Thread implements StoreClient {
       Long oldbytes = (Long) Sensision.getValue(SensisionConstants.SENSISION_CLASS_CONTINUUM_STANDALONE_INMEMORY_BYTES, Sensision.EMPTY_LABELS);     
       
       Sensision.set(SensisionConstants.SENSISION_CLASS_CONTINUUM_STANDALONE_INMEMORY_BYTES, Sensision.EMPTY_LABELS, bytes);
-      Sensision.update(SensisionConstants.SENSISION_CLASS_CONTINUUM_STANDALONE_INMEMORY_GC_DATAPOINTS, Sensision.EMPTY_LABELS, datapoints);
+      Sensision.update(SensisionConstants.SENSISION_CLASS_CONTINUUM_STANDALONE_INMEMORY_GC_DATAPOINTS, Sensision.EMPTY_LABELS, gctimespan + gctimeclip + gcwatermark);
+      Sensision.update(SensisionConstants.SENSISION_CLASS_CONTINUUM_STANDALONE_INMEMORY_GC_TIMESPAN, Sensision.EMPTY_LABELS, gctimespan);
+      Sensision.update(SensisionConstants.SENSISION_CLASS_CONTINUUM_STANDALONE_INMEMORY_GC_TIMECLIP, Sensision.EMPTY_LABELS, gctimeclip);
+      Sensision.update(SensisionConstants.SENSISION_CLASS_CONTINUUM_STANDALONE_INMEMORY_GC_WATERMARK, Sensision.EMPTY_LABELS, gcwatermark);
       if (null != oldbytes && oldbytes > bytes) {
         Sensision.update(SensisionConstants.SENSISION_CLASS_CONTINUUM_STANDALONE_INMEMORY_GC_BYTES, Sensision.EMPTY_LABELS, oldbytes - bytes);
       }

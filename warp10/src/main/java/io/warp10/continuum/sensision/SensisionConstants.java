@@ -984,6 +984,21 @@ public class SensisionConstants {
   public static final String SENSISION_CLASS_CONTINUUM_STANDALONE_INMEMORY_GC_DATAPOINTS = "warp.standalone.inmemory.gc.datapoints";
 
   /**
+   * Number of datapoints garbage collected in the memory store for timespan
+   */
+  public static final String SENSISION_CLASS_CONTINUUM_STANDALONE_INMEMORY_GC_TIMESPAN = "warp.standalone.inmemory.gc.timespan";
+
+  /**
+   * Number of datapoints garbage collected in the memory store for timeclip
+   */
+  public static final String SENSISION_CLASS_CONTINUUM_STANDALONE_INMEMORY_GC_TIMECLIP = "warp.standalone.inmemory.gc.timeclip";
+
+  /**
+   * Number of datapoints garbage collected in the memory store for watermark
+   */
+  public static final String SENSISION_CLASS_CONTINUUM_STANDALONE_INMEMORY_GC_WATERMARK = "warp.standalone.inmemory.gc.watermark";
+
+  /**
    * Number of cached estimators for GTS uniqueness estimation
    */
   public static final String SENSISION_CLASS_CONTINUUM_ESTIMATORS_CACHED = "warp.estimators.cached";
