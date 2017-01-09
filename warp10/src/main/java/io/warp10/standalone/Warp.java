@@ -279,7 +279,9 @@ public class Warp extends WarpDist implements Runnable {
       scc = new StandaloneMemoryStore(keystore,
           Long.valueOf(WarpDist.getProperties().getProperty(Configuration.IN_MEMORY_DEPTH, Long.toString(60 * 60 * 1000 * Constants.TIME_UNITS_PER_MS))),
           Long.valueOf(WarpDist.getProperties().getProperty(Configuration.IN_MEMORY_HIGHWATERMARK, "100000")),
-          Long.valueOf(WarpDist.getProperties().getProperty(Configuration.IN_MEMORY_LOWWATERMARK, "80000")));
+          Long.valueOf(WarpDist.getProperties().getProperty(Configuration.IN_MEMORY_LOWWATERMARK, "80000")),
+          Long.valueOf(WarpDist.getProperties().getProperty(Configuration.IN_MEMORY_HIGHTIMECLIP, Long.toString(2 * 60 * 60 * 1000 * Constants.TIME_UNITS_PER_MS))),
+          Long.valueOf(WarpDist.getProperties().getProperty(Configuration.IN_MEMORY_LOWTIMECLIP, Long.toString(60 * 60 * 1000 * Constants.TIME_UNITS_PER_MS))));
       ((StandaloneMemoryStore) scc).setDirectoryClient((StandaloneDirectoryClient) sdc);
       if ("true".equals(WarpDist.getProperties().getProperty(Configuration.IN_MEMORY_EPHEMERAL))) {
         ((StandaloneMemoryStore) scc).setEphemeral(true);

@@ -40,13 +40,13 @@ continuum.aes.logging
 ## STANDALONE
 ##
 
-# [*] Path to the directory where LevelDB data will be stored, use /dev/null when 
+# [*] Path to the directory where LevelDB data will be stored, use /dev/null when
 # in.memory is set to 'true'
 leveldb.home = /dev/null
 
 # Flag to be set to 'true' to indicate that the platform should store its data in memory
 in.memory = true
- 
+
 # [*] Port on to which the standalone version of the platform will listen
 standalone.host
 
@@ -59,7 +59,7 @@ standalone.acceptors
 # [*] Number of Jetty selectors
 standalone.selectors
 
-# [*] Depth of historical data to preserve, expressed in ms
+# [*] Depth of historical data to preserve, expressed in platform time unit
 in.memory.depth
 
 # Periodicity of the garbage collector scan expressed in ms, if unset, 25% of 'depth'
@@ -74,11 +74,18 @@ in.memory.highwatermark
 # until its size becomes lower than 'lowwatermark' or such datapoints no longer exist
 in.memory.lowwatermark
 
+# Upper limit duration after which a GTS is inspected when the garbage collector runs.
+in.memory.hightimeclip
+
+# The garbage collector will remove datapoints from a GTS if they are older than 'hightimeclip'
+# until its first ti;estamp becomes lower than 'lowtimeclip' or such datapoints no longer exist
+in.memory.lowtimeclip
+
 # Path of a dump file to load upon startup
 in.memory.load
 
 # Path onto which to dump the memory content on shutdown
-in.memory.dump 
+in.memory.dump
 
 # Set the following to 'true' to switch the in-memory store in ephemeral mode.
 # When in ephemeral mode, only the data from the last update request is retained.
@@ -142,4 +149,3 @@ throttling.manager.mads.default = -1
 # -1 means do not enforce DDPS by default
 # 0 will block any producer for which specific values are not defined
 throttling.manager.rate.default = -1.0
-

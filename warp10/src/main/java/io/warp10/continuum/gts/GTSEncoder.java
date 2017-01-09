@@ -135,6 +135,11 @@ public class GTSEncoder {
   private long baseTimestamp = 0L;
 
   /**
+   * Timestamp of first measurement.
+   */
+  private long firstTimestamp = Long.MAX_VALUE;
+
+  /**
    * Timestamp of last added measurement.
    */
   private long lastTimestamp = 0L;
@@ -532,8 +537,11 @@ public class GTSEncoder {
         throw new RuntimeException("Invalid timestamp format.");
     }
 
-    // Keep track of timestamp
+    // Keep track of timestamps
     lastTimestamp = timestamp;
+    if (timestamp < firstTimestamp) {
+      firstTimestamp = timestamp;
+    }
 
     // Write location data
 
@@ -854,6 +862,7 @@ public class GTSEncoder {
    * @param initialStringValue
    */
   synchronized void initialize(long initialTimestamp, long initialGeoXPPoint, long initialElevation, long initialLongValue, double initialDoubleValue, BigDecimal initialBDValue, String initialStringValue) {
+    this.firstTimestamp = initialTimestamp;
     this.initialTimestamp = initialTimestamp;
     this.initialGeoXPPoint = initialGeoXPPoint;
     this.initialElevation = initialElevation;
@@ -898,6 +907,7 @@ public class GTSEncoder {
   
   public void reset(long baseTS) throws IOException {
     baseTimestamp = baseTS;
+    firstTimestamp = Long.MAX_VALUE;
     lastTimestamp = 0L;
     lastGeoXPPoint = GeoTimeSerie.NO_LOCATION;
     lastElevation = GeoTimeSerie.NO_ELEVATION;
@@ -955,6 +965,7 @@ public class GTSEncoder {
     
     if (this.baseTimestamp != encoder.baseTimestamp
         || !Arrays.equals(this.wrappingKey, encoder.wrappingKey)
+        || this.firstTimestamp != encoder.firstTimestamp
         || this.lastTimestamp != encoder.initialTimestamp
         || this.lastGeoXPPoint != encoder.initialGeoXPPoint
         || this.lastElevation != encoder.initialElevation
@@ -976,6 +987,7 @@ public class GTSEncoder {
       this.stream.write(encoder.getBytes());
       
       // Copy the last values
+      this.firstTimestamp = encoder.firstTimestamp;
       this.lastTimestamp = encoder.lastTimestamp;
       this.lastElevation = encoder.lastElevation;
       this.lastGeoXPPoint = encoder.lastGeoXPPoint;
@@ -1059,7 +1071,11 @@ public class GTSEncoder {
   public long getLastTimestamp() {
     return this.lastTimestamp;
   }
-  
+
+  public long getFirstTimestamp() {
+    return this.firstTimestamp;
+  }
+
   /**
    * Disable delta encoding until the encoder has encountered a new
    * ts/location/elevation and longValue.

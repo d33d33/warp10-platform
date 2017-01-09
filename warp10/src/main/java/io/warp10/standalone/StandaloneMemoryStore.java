@@ -75,7 +75,15 @@ public class StandaloneMemoryStore extends Thread implements StoreClient {
   private final long highwatermark;
   
   private final long lowwatermark;
-  
+
+  /**
+   * High limit for encoder timestamps, if an encoder goes beyond this time, it will be trimmed
+   * until it goes back to below 'lowtimeclip'
+   */
+  private final long hightimeclip;
+
+  private final long lowtimeclip;
+
   private final KeyStore keystore;
   
   private final byte[] aesKey;
@@ -90,8 +98,8 @@ public class StandaloneMemoryStore extends Thread implements StoreClient {
    * current GTSEncoder thus only retaining the last one.
    */
   private boolean ephemeral = false;
-  
-  public StandaloneMemoryStore(KeyStore keystore, long timespan, long highwatermark, long lowwatermark) {
+
+  public StandaloneMemoryStore(KeyStore keystore, long timespan, long highwatermark, long lowwatermark, long hightimeclip, long lowtimeclip) {
     this.keystore = keystore;
     this.aesKey = this.keystore.getKey(KeyStore.AES_LEVELDB_DATA);
     //this.series = new ConcurrentHashMap<BigInteger,GTSEncoder>();
@@ -99,7 +107,9 @@ public class StandaloneMemoryStore extends Thread implements StoreClient {
     this.timespan = timespan;
     this.highwatermark = highwatermark;
     this.lowwatermark = lowwatermark;
-    
+    this.hightimeclip = hightimeclip;
+    this.lowtimeclip = lowtimeclip;
+
     //
     // Add a shutdown hook to dump the memory store on exit
     //
@@ -465,7 +475,42 @@ public class StandaloneMemoryStore extends Thread implements StoreClient {
                 break;
               }
             }
-            
+
+            try {
+              //
+              // Only modify the encoder if we skipped values
+              //
+
+              if (skipped > 0) {
+                if (!keeplastskipped) {
+                  decoder.next();
+                } else {
+                  skipped--;
+                }
+                encoder.reset(decoder.getEncoder(true));
+                datapoints += skipped;
+              }
+            } catch (IOException ioe) {
+            }
+          }
+        } else if (now - encoder.getFirstTimestamp() > this.hightimeclip) {
+
+          synchronized (encoder) {
+            GTSDecoder decoder = encoder.getDecoder(true);
+
+            long skipped = 0;
+
+            boolean keeplastskipped = false;
+
+            while (decoder.next()) {
+              skipped++;
+              // Stop when reaching the first timestamp which is bellow low time clip
+              if (decoder.getTimestamp() > now - this.lowtimeclip) {
+                keeplastskipped = true;
+                break;
+              }
+            }
+
             try {
               //
               // Only modify the encoder if we skipped values

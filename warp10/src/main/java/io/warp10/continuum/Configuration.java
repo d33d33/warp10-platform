@@ -1327,7 +1327,7 @@ public class Configuration {
   public static final String IN_MEMORY = "in.memory";
   
   /**
-   * Depth of timestamps to retain (in ms)
+   * Depth of timestamps to retain (in platform unit)
    */
   public static final String IN_MEMORY_DEPTH = "in.memory.depth";
   
@@ -1341,7 +1341,18 @@ public class Configuration {
    * Low water mark in bytes for garbage collection (see above)
    */
   public static final String IN_MEMORY_LOWWATERMARK = "in.memory.lowwatermark";
-  
+
+  /**
+   * High time clip in platform time unit. When points goes above this threshold, attempts to remove expired datapoints will be
+   * done until first timestamp goes below the low time clip(see below) or no more expired datapoints can be found.
+   */
+  public static final String IN_MEMORY_HIGHTIMECLIP = "in.memory.hightimeclip";
+
+  /**
+   * Low time clip mark in platform time unit for garbage collection (see above)
+   */
+  public static final String IN_MEMORY_LOWTIMECLIP = "in.memory.lowtimeclip";
+
   /**
    * If set to true, then only the last recorded value of a GTS is kept
    */
