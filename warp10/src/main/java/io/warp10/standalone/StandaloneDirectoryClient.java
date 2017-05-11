@@ -419,6 +419,7 @@ public class StandaloneDirectoryClient implements DirectoryClient {
         //
         if (null != labelsExpr.get(i)) {
           String labelsel = labelsExpr.get(i).get(splitLabel);
+          System.out.println(labelsel);
 
           if (null != labelsel && labelsel.startsWith("=")) {
             classNames = splitClasses.get(labelsel.substring(1));
