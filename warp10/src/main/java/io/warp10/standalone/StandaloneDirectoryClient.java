@@ -44,6 +44,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -103,7 +105,7 @@ public class StandaloneDirectoryClient implements DirectoryClient {
   /**
    * Map of classId to class names
    */
-  private final Map<Long,String> classNames = new ConcurrentSkipListMap<Long, String>(ID_COMPARATOR);
+  private final Map<Long,String> classNames = new MapMaker().concurrencyLevel(64).makeMap();
 
   private String splitLabel = Constants.OWNER_LABEL;
   private final Map<String,Set<String>> splitClasses = new MapMaker().concurrencyLevel(64).makeMap();
@@ -415,8 +417,8 @@ public class StandaloneDirectoryClient implements DirectoryClient {
         //
         // Extract per label classes if label selector exists
         //
-        if (request.getLabelsSelectors().get(i).size() > 0) {
-          String labelsel = request.getLabelsSelectors().get(i).get(splitLabel);
+        if (null != labelsExpr.get(i)) {
+          String labelsel = labelsExpr.get(i).get(splitLabel);
 
           if (null != labelsel && labelsel.startsWith("=")) {
             classNames = splitClasses.get(labelsel.substring(1));
