@@ -109,7 +109,7 @@ public class StandaloneDirectoryClient implements DirectoryClient {
 
   private String splitLabel = Constants.OWNER_LABEL;
   private final Map<String,Set<String>> splitClasses = new MapMaker().concurrencyLevel(64).makeMap();
-  private final Map<String,Set<Long>> splitLabels = new MapMaker().concurrencyLevel(64).makeMap();
+  private final Map<String,Map<String,ArrayList<Metadata>>> splitMetadatas = new MapMaker().concurrencyLevel(64).makeMap();
   private final Map<String,String> sensisionSplitLabels = new HashMap<String,String>();
 
   public StandaloneDirectoryClient(DB db, final KeyStore keystore) {
@@ -266,15 +266,21 @@ public class StandaloneDirectoryClient implements DirectoryClient {
                   classes.add(metadata.getName());
                 }
 
-                synchronized(splitLabels) {
-                  Set<Long> labels = splitLabels.get(label);
+                synchronized(splitMetadatas) {
+                  Map<String,ArrayList<Metadata>> classes = splitMetadatas.get(label);
 
-                  if (null == labels) {
-                    labels = new ConcurrentSkipListSet<Long>();
-                    splitLabels.put(label, labels);
+                  if (null == classes) {
+                    classes = (Map) new MapMaker().concurrencyLevel(64).makeMap();
+                    splitMetadatas.put(label, classes);
                   }
 
-                  labels.add(labelsId);
+                  ArrayList<Metadata> classe = classes.get(metadata.getName());
+                  if (null == classe) {
+                    classe = new ArrayList<Metadata>();
+                    classes.put(metadata.getName(), classe);
+                  }
+
+                  classe.add(metadata);
                 }
 
                 Sensision.set(SensisionConstants.SENSISION_CLASS_CONTINUUM_DIRECTORY_SPLITS, sensisionSplitLabels, splitClasses.size());
@@ -419,7 +425,7 @@ public class StandaloneDirectoryClient implements DirectoryClient {
 
       // Copy the class names as 'this.classNames' might be updated while in the for loop
       Collection<String> classNames = new ArrayList<String>();
-      Collection<Long> labelIds = null;
+      Map<String,ArrayList<Metadata>> metaSplit = null;
 
       if (null != exactClassName) {
         if (!this.metadatas.containsKey(exactClassName)) {
@@ -432,11 +438,10 @@ public class StandaloneDirectoryClient implements DirectoryClient {
         //
         if (null != labelsExpr.get(i)) {
           String labelsel = labelsExpr.get(i).get(splitLabel);
-          System.out.println(labelsel);
 
           if (null != labelsel && labelsel.startsWith("=")) {
             classNames = splitClasses.get(labelsel.substring(1));
-            labelIds = splitLabels.get(labelsel.substring(1));
+            metaSplit = splitMetadatas.get(labelsel.substring(1));
           } else {
             classNames = this.classNames.values();
           }
@@ -495,16 +500,14 @@ public class StandaloneDirectoryClient implements DirectoryClient {
         //
 
         if (classSmartPattern.matches(className)) {
-          for (Entry<Long,Metadata> entry: this.metadatas.get(className).entrySet()) {
-            Long id = entry.getKey();
-            Metadata metadata = entry.getValue();
+          Collection<Metadata> metaList = null;
+          if (null != metaSplit) {
+            metaList = metaSplit.get(className);
+          } else {
+            metaList = this.metadatas.get(className).values();
+          }
 
-            if (null != labelIds) {
-              if (!labelIds.contains(id)) {
-                continue;
-              }
-            }
-
+          for (Metadata metadata: metaList) {
             boolean exclude = false;
 
             int idx = 0;
@@ -822,15 +825,21 @@ public class StandaloneDirectoryClient implements DirectoryClient {
           classes.add(metadata.getName());
         }
 
-        synchronized(splitLabels) {
-          Set<Long> labels = splitLabels.get(label);
+        synchronized(splitMetadatas) {
+          Map<String,ArrayList<Metadata>> classes = splitMetadatas.get(label);
 
-          if (null == labels) {
-            labels = new ConcurrentSkipListSet<Long>();
-            splitLabels.put(label, labels);
+          if (null == classes) {
+            classes = (Map) new MapMaker().concurrencyLevel(64).makeMap();
+            splitMetadatas.put(label, classes);
           }
 
-          labels.add(labelsId);
+          ArrayList<Metadata> classe = classes.get(metadata.getName());
+          if (null == classe) {
+            classe = new ArrayList<Metadata>();
+            classes.put(metadata.getName(), classe);
+          }
+
+          classe.add(metadata);
         }
 
         Sensision.set(SensisionConstants.SENSISION_CLASS_CONTINUUM_DIRECTORY_SPLITS, sensisionSplitLabels, splitClasses.size());
