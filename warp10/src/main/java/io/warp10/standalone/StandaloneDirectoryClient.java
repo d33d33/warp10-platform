@@ -109,6 +109,7 @@ public class StandaloneDirectoryClient implements DirectoryClient {
 
   private String splitLabel = Constants.OWNER_LABEL;
   private final Map<String,Set<String>> splitClasses = new MapMaker().concurrencyLevel(64).makeMap();
+  private final Map<String,Set<Long>> splitLabels = new MapMaker().concurrencyLevel(64).makeMap();
   private final Map<String,String> sensisionSplitLabels = new HashMap<String,String>();
 
   public StandaloneDirectoryClient(DB db, final KeyStore keystore) {
@@ -265,6 +266,17 @@ public class StandaloneDirectoryClient implements DirectoryClient {
                   classes.add(metadata.getName());
                 }
 
+                synchronized(splitLabels) {
+                  Set<Long> labels = splitLabels.get(label);
+
+                  if (null == labels) {
+                    labels = new ConcurrentSkipListSet<Long>();
+                    splitLabels.put(label, labels);
+                  }
+
+                  labels.add(labelsId);
+                }
+
                 Sensision.set(SensisionConstants.SENSISION_CLASS_CONTINUUM_DIRECTORY_SPLITS, sensisionSplitLabels, splitClasses.size());
               }
 
@@ -407,6 +419,7 @@ public class StandaloneDirectoryClient implements DirectoryClient {
 
       // Copy the class names as 'this.classNames' might be updated while in the for loop
       Collection<String> classNames = new ArrayList<String>();
+      Collection<Long> labelIds = null;
 
       if (null != exactClassName) {
         if (!this.metadatas.containsKey(exactClassName)) {
@@ -423,6 +436,7 @@ public class StandaloneDirectoryClient implements DirectoryClient {
 
           if (null != labelsel && labelsel.startsWith("=")) {
             classNames = splitClasses.get(labelsel.substring(1));
+            labelIds = splitLabels.get(labelsel.substring(1));
           } else {
             classNames = this.classNames.values();
           }
@@ -481,7 +495,16 @@ public class StandaloneDirectoryClient implements DirectoryClient {
         //
 
         if (classSmartPattern.matches(className)) {
-          for (Metadata metadata: this.metadatas.get(className).values()) {
+          for (Entry<Long,Metadata> entry: this.metadatas.get(className).entrySet()) {
+            Long id = entry.getKey();
+            Metadata metadata = entry.getValue();
+
+            if (null != labelIds) {
+              if (!labelIds.contains(id)) {
+                continue;
+              }
+            }
+
             boolean exclude = false;
 
             int idx = 0;
@@ -797,6 +820,17 @@ public class StandaloneDirectoryClient implements DirectoryClient {
           }
 
           classes.add(metadata.getName());
+        }
+
+        synchronized(splitLabels) {
+          Set<Long> labels = splitLabels.get(label);
+
+          if (null == labels) {
+            labels = new ConcurrentSkipListSet<Long>();
+            splitLabels.put(label, labels);
+          }
+
+          labels.add(labelsId);
         }
 
         Sensision.set(SensisionConstants.SENSISION_CLASS_CONTINUUM_DIRECTORY_SPLITS, sensisionSplitLabels, splitClasses.size());
